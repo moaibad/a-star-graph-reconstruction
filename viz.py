@@ -183,86 +183,6 @@ def get_shortest_path(im, src, opp, edge_im, g, vertex_distances):
 
 
 ##########################
-def convert_to_graph(graph_data):
-    g = graph.Graph()
-    vertex_map = {}
-
-    # Tambahkan semua vertex
-    for key, values in graph_data.items():
-        if key not in vertex_map:
-            vertex_map[key] = g.add_vertex(geom.Point(*key))
-        for value in values:
-            if value not in vertex_map:
-                vertex_map[value] = g.add_vertex(geom.Point(*value))
-
-    # Tambahkan edges berdasarkan adjacency list
-    for key, values in graph_data.items():
-        src = vertex_map[key]
-        for value in values:
-            dst = vertex_map[value]
-            g.add_bidirectional_edge(src, dst)
-
-    return g
-
-def save_graph_to_txt(graph, filename):
-    with open(filename, 'w') as f:
-        # Simpan vertices
-        f.write("# Vertices (x, y)\n")
-        for vertex in graph.vertices:
-            f.write(f"{vertex.point.x} {vertex.point.y}\n")
-
-        # Pisahkan vertices dan edges
-        f.write("\n# Edges (src_id, dst_id)\n")
-        for edge in graph.edges:
-            f.write(f"{edge.src.id} {edge.dst.id}\n")
-
-def parse_graph(file_path):
-    # Open the file
-    with open(file_path, 'r') as file:
-        # Read all lines from the file
-        lines = file.readlines()
-    
-    # Split the data into two parts: vertices and edges
-    vertices = []
-    edges = []
-    is_edge_section = False
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            is_edge_section = True  # This marks the transition from vertices to edges
-            continue
-        if is_edge_section:
-            # Edge section (index1 index2)
-            edges.append(tuple(map(int, line.split())))
-        else:
-            # Vertex section (x y)
-            x, y = map(int, line.split())
-            vertices.append((x, y))
-    
-    # Create the graph structure
-    graph = {}
-    
-    # Create a dictionary to map vertex index to actual vertex
-    vertex_index = {i: vertices[i] for i in range(len(vertices))}
-    
-    # Add edges to the graph
-    for source_index, dest_index in edges:
-        # Get the vertex pairs for source and destination
-        source_vertex = vertex_index[source_index]
-        dest_vertex = vertex_index[dest_index]
-        
-        # Add the edge in both directions (undirected graph)
-        if source_vertex not in graph:
-            graph[source_vertex] = []
-        if dest_vertex not in graph:
-            graph[dest_vertex] = []
-        
-        graph[source_vertex].append(dest_vertex)
-        graph[dest_vertex].append(source_vertex)
-
-    return graph
-
 def write_graph_to_file_original(graph_data, filename="graph_output_original.txt"):
     with open(filename, "w") as file:
         # Tulis jumlah vertex dan edge
@@ -362,6 +282,52 @@ def visualize_graph(file_path):
     plt.figure(figsize=(10, 10))
     nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=8)
     plt.show()
+    
+def clean_graph_from_file(input_path="graph_data.txt", output_path="cleaned_graph.txt"):
+    # Membaca isi file dan memisahkan vertex dan edge
+    with open(input_path, 'r') as f:
+        content = f.read()
+
+    vertex_section, edge_section = content.strip().split('\n\n', 1)
+    vertex_lines = vertex_section.strip().split('\n')
+    edge_lines = edge_section.strip().split('\n')
+
+    # Parsing vertices
+    original_vertices = [tuple(map(int, v.split())) for v in vertex_lines]
+    vertex_map = {}  # map from old index to new index
+    unique_vertices = []
+    coord_to_index = {}
+
+    for i, v in enumerate(original_vertices):
+        if v not in coord_to_index:
+            new_index = len(unique_vertices)
+            coord_to_index[v] = new_index
+            unique_vertices.append(v)
+        vertex_map[i] = coord_to_index[v]
+
+    # Parsing and cleaning edges
+    original_edges = [tuple(map(int, e.split())) for e in edge_lines]
+    cleaned_edges_set = set()
+
+    for v1, v2 in original_edges:
+        new_v1 = vertex_map[v1]
+        new_v2 = vertex_map[v2]
+        if new_v1 != new_v2:
+            cleaned_edges_set.add(tuple(sorted((new_v1, new_v2))))
+
+    cleaned_edges = sorted(cleaned_edges_set)
+
+    # Menuliskan hasil ke file
+    with open(output_path, 'w') as f:
+        for v in unique_vertices:
+            f.write(f"{v[0]} {v[1]}\n")
+        f.write("\n")  # pisahkan section
+        for v1, v2 in cleaned_edges:
+            f.write(f"{v1} {v2}\n")
+
+    print(f"Cleaned graph written to: {output_path}")
+
+
 ######################################
 outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_164_road.png").astype('float32') / 255.0
 outim = outim.swapaxes(0, 1)
@@ -378,8 +344,10 @@ g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidi
 connections = get_connections(g, outim)
 
 g = insert_connections(g, connections)
-g.save('save.txt')
+# g.save('save.txt')
+
+# clean_graph_from_file('save.txt','cleaned.txt')
 
 
-file_path = 'save.txt'  # Ganti dengan path file Anda
-visualize_graph(file_path)
+# file_path = 'cleaned.txt'  # Ganti dengan path file Anda
+# visualize_graph(file_path)
