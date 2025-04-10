@@ -11,11 +11,11 @@ import random
 from io import StringIO
 
 
-MIN_GRAPH_DISTANCE = 100
-MAX_STRAIGHT_DISTANCE = 100
+# MIN_GRAPH_DISTANCE = 100
+# MAX_STRAIGHT_DISTANCE = 100
 
-# MIN_GRAPH_DISTANCE = 16.6
-# MAX_STRAIGHT_DISTANCE = 8.3
+MIN_GRAPH_DISTANCE = 16.6
+MAX_STRAIGHT_DISTANCE = 8.3
 # MIN_GRAPH_DISTANCE = 166
 # MAX_STRAIGHT_DISTANCE = 83
 RDP_EPSILON = 2
@@ -208,32 +208,6 @@ def write_graph_to_file_original(graph_data, filename="graph_output_original.txt
     
     print(f"Graph telah ditulis ke {filename}")
 
-def write_graph_to_file_indexed(graph_data, filename="graph_output_indexed.txt"):
-    with open(filename, "w") as file:
-        # Ambil semua vertex dan simpan urutan indeksnya
-        vertices = list(graph_data.keys())
-        vertex_to_index = {vertex: i for i, vertex in enumerate(vertices)}
-        
-        # Tulis semua vertex
-        file.write("Vertices:\n")
-        for vertex in vertices:
-            if isinstance(vertex, (list, tuple)):  # Misal (15, 20)
-                file.write(" ".join(map(str, vertex)) + "\n")
-            else:
-                file.write(f"{vertex}\n")
-
-        # Tulis edge dalam bentuk index dari vertices
-        file.write("\nEdges:\n")
-        edges = set()
-        for vertex, neighbors in graph_data.items():
-            for neighbor in neighbors:
-                edge = tuple(sorted([vertex_to_index[vertex], vertex_to_index[neighbor]]))
-                if edge not in edges:
-                    edges.add(edge)
-                    file.write(f"{edge[0]} {edge[1]}\n")
-    
-    print(f"Graph dengan indeks telah ditulis ke {filename}")
-
 def write_graph_to_file_bidirectional(graph_data):
     # Kumpulkan semua vertex unik
     vertex_set = set(graph_data.keys())
@@ -256,16 +230,62 @@ def write_graph_to_file_bidirectional(graph_data):
     # Simpan ke file teks
     output_path = 'graph_output_bidirectional.txt'
     with open(output_path, 'w') as f:
-        f.write("Vertices:\n")
         for v in vertices:
             f.write(f"{v[0]} {v[1]}\n")
         
-        f.write("\nEdges:\n")
+        f.write("\n")
         for e in edges:
             f.write(f"{e[0]} {e[1]}\n")
 
     print(f"Graph saved as plain text to {output_path}")
-    
+
+def parse_graph(file_path):
+     # Open the file
+     with open(file_path, 'r') as file:
+         # Read all lines from the file
+         lines = file.readlines()
+     
+     # Split the data into two parts: vertices and edges
+     vertices = []
+     edges = []
+     is_edge_section = False
+ 
+     for line in lines:
+         line = line.strip()
+         if not line:
+             is_edge_section = True  # This marks the transition from vertices to edges
+             continue
+         if is_edge_section:
+             # Edge section (index1 index2)
+             edges.append(tuple(map(int, line.split())))
+         else:
+             # Vertex section (x y)
+             x, y = map(int, line.split())
+             vertices.append((x, y))
+     
+     # Create the graph structure
+     graph = {}
+     
+     # Create a dictionary to map vertex index to actual vertex
+     vertex_index = {i: vertices[i] for i in range(len(vertices))}
+     
+     # Add edges to the graph
+     for source_index, dest_index in edges:
+         # Get the vertex pairs for source and destination
+         source_vertex = vertex_index[source_index]
+         dest_vertex = vertex_index[dest_index]
+         
+         # Add the edge in both directions (undirected graph)
+         if source_vertex not in graph:
+             graph[source_vertex] = []
+         if dest_vertex not in graph:
+             graph[dest_vertex] = []
+         
+         graph[source_vertex].append(dest_vertex)
+         graph[dest_vertex].append(source_vertex)
+ 
+     return graph
+ 
 def visualize_graph(file_path):
     # Parse the graph data from the file
     graph_data = parse_graph(file_path)
@@ -327,27 +347,49 @@ def clean_graph_from_file(input_path="graph_data.txt", output_path="cleaned_grap
 
     print(f"Cleaned graph written to: {output_path}")
 
+def save(g, fname):
+		coord_to_new_id = {}
+		unique_vertices = []
+		old_id_to_new_id = {}
+
+		for vertex in g.vertices:
+			coord = (vertex.point.x, vertex.point.y)
+			if coord not in coord_to_new_id:
+				new_id = len(unique_vertices)
+				coord_to_new_id[coord] = new_id
+				unique_vertices.append(coord)
+			old_id_to_new_id[vertex.id] = coord_to_new_id[coord]
+
+		cleaned_edges = set()
+		for edge in g.edges:
+			new_src = old_id_to_new_id[edge.src.id]
+			new_dst = old_id_to_new_id[edge.dst.id]
+			if new_src != new_dst:
+				cleaned_edges.add(tuple(sorted((new_src, new_dst))))
+
+		with open(fname, 'w') as f:
+			for x, y in unique_vertices:
+				f.write(f"{x} {y}\n")
+			f.write("\n")
+			for src, dst in sorted(cleaned_edges):
+				f.write(f"{src} {dst}\n")
 
 ######################################
-outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_164_road.png").astype('float32') / 255.0
+
+outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
 outim = outim.swapaxes(0, 1)
 
-with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_445.p', 'rb') as file:
+with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
     graph_data = pickle.load(file)
 
 # write_graph_to_file_original(graph_data)
-# write_graph_to_file_indexed(graph_data)
-# write_graph_to_file_bidirectional(graph_data)
+write_graph_to_file_bidirectional(graph_data)
 
 g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidirectional.txt")
 
 connections = get_connections(g, outim)
 
 g = insert_connections(g, connections)
-# g.save('save.txt')
+save(g, 'save.txt')
 
-# clean_graph_from_file('save.txt','cleaned.txt')
-
-
-# file_path = 'cleaned.txt'  # Ganti dengan path file Anda
-# visualize_graph(file_path)
+visualize_graph('save.txt')
