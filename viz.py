@@ -24,7 +24,7 @@ def get_connections(g, im, limit=None):
     edge_im = -numpy.ones(im.shape, dtype='int32')
     for edge in g.edges:
         for p in geom.draw_line(edge.src.point, edge.dst.point, geom.Point(edge_im.shape[0], edge_im.shape[1])):
-            edge_im[p.x, p.y] = edge.id
+            edge_im[p.x-1, p.y-1] = edge.id
     
     road_segments, _ = graph.get_graph_road_segments(g)
     random.shuffle(road_segments)
@@ -151,8 +151,8 @@ def get_shortest_path(im, src, opp, edge_im, g, vertex_distances):
 
 		del distances[closest_point]
 		seen_points.add(closest_point)
-		if edge_im[closest_point.x, closest_point.y] >= 0:
-			edge = g.edges[edge_im[closest_point.x, closest_point.y]]
+		if edge_im[closest_point.x-1, closest_point.y-1] >= 0:
+			edge = g.edges[edge_im[closest_point.x-1, closest_point.y-1]]
 			src_distance = vertex_distances.get(edge.src, MIN_GRAPH_DISTANCE)
 			dst_distance = vertex_distances.get(edge.dst, MIN_GRAPH_DISTANCE)
 			if src_distance + closest_point.distance(edge.src.point) >= MIN_GRAPH_DISTANCE and dst_distance + closest_point.distance(edge.dst.point) >= MIN_GRAPH_DISTANCE:
@@ -363,10 +363,10 @@ def visualize_graph(file_path):
     nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=8)
     plt.show()
 ######################################
-outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
+outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_164_road.png").astype('float32') / 255.0
 outim = outim.swapaxes(0, 1)
 
-with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
+with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_445.p', 'rb') as file:
     graph_data = pickle.load(file)
 
 # write_graph_to_file_original(graph_data)
@@ -378,8 +378,8 @@ g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidi
 connections = get_connections(g, outim)
 
 g = insert_connections(g, connections)
-# g.save('save.txt')
+g.save('save.txt')
 
 
-# file_path = 'save.txt'  # Ganti dengan path file Anda
-# visualize_graph(file_path)
+file_path = 'save.txt'  # Ganti dengan path file Anda
+visualize_graph(file_path)
