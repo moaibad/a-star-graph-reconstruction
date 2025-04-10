@@ -11,11 +11,11 @@ import random
 from io import StringIO
 
 
-# MIN_GRAPH_DISTANCE = 100
-# MAX_STRAIGHT_DISTANCE = 100
+MIN_GRAPH_DISTANCE = 100
+MAX_STRAIGHT_DISTANCE = 50
 
-MIN_GRAPH_DISTANCE = 16.6
-MAX_STRAIGHT_DISTANCE = 8.3
+# MIN_GRAPH_DISTANCE = 16.6
+# MAX_STRAIGHT_DISTANCE = 8.3
 # MIN_GRAPH_DISTANCE = 166
 # MAX_STRAIGHT_DISTANCE = 83
 RDP_EPSILON = 2
@@ -374,22 +374,72 @@ def save(g, fname):
         for src, dst in sorted(cleaned_edges):
             f.write(f"{src} {dst}\n")
 
+import pickle
+
+def restruct_graph(input_txt_path, output_pickle_path):
+    """
+    Mengubah file teks berisi vertex dan edge (dipisahkan oleh baris kosong)
+    menjadi graph adjacency list berbasis tuple koordinat, dan simpan sebagai file .p
+    """
+    with open(input_txt_path, 'r') as f:
+        lines = [line.strip() for line in f if line.strip() != '']
+
+    # Temukan index pertama edge berdasarkan asumsi: edge hanya mengandung indeks (bukan koordinat)
+    vertex_lines = []
+    edge_lines = []
+
+    for line in lines:
+        parts = line.split()
+        if len(parts) != 2:
+            continue  # skip invalid lines
+        if all(part.isdigit() for part in parts):
+            # Heuristic: angka besar mungkin koordinat (vertex), kecil mungkin index (edge)
+            a, b = map(int, parts)
+            if a > 100 or b > 100:  # simple heuristic based on your sample
+                vertex_lines.append(line)
+            else:
+                edge_lines.append(line)
+
+    # Parsing vertex
+    vertices = [tuple(map(int, line.split())) for line in vertex_lines]
+
+    # Inisialisasi graph kosong
+    graph = {v: [] for v in vertices}
+
+    # Parsing edge
+    for line in edge_lines:
+        i, j = map(int, line.split())
+        if i < len(vertices) and j < len(vertices):
+            v1 = vertices[i]
+            v2 = vertices[j]
+            graph[v1].append(v2)
+            graph[v2].append(v1)  # Bidirectional
+
+    # Simpan ke file .p
+    with open(output_pickle_path, 'wb') as out_file:
+        pickle.dump(graph, out_file)
+
 ######################################
 
-outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
-outim = outim.swapaxes(0, 1)
+# outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_3_Paris_37_road.png").astype('float32') / 255.0
+# outim = outim.swapaxes(0, 1)
 
-with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
-    graph_data = pickle.load(file)
+# with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_3_Paris_37.p', 'rb') as file:
+#     graph_data = pickle.load(file)
+
+# with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\save.p', 'rb') as file:
+#     graph_data = pickle.load(file)
+
+# restruct_graph('save.txt', 'save.p')
 
 # write_graph_to_file_original(graph_data)
-write_graph_to_file_bidirectional(graph_data)
+# write_graph_to_file_bidirectional(graph_data)
 
-g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidirectional.txt")
+# g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidirectional.txt")
 
-connections = get_connections(g, outim)
+# connections = get_connections(g, outim)
 
-g = insert_connections(g, connections)
-save(g, 'save.txt')
+# g = insert_connections(g, connections)
+# save(g, 'save.txt')
 
-visualize_graph('save.txt')
+# visualize_graph('save.txt')
