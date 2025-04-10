@@ -208,7 +208,7 @@ def write_graph_to_file_original(graph_data, filename="graph_output_original.txt
     
     print(f"Graph telah ditulis ke {filename}")
 
-def write_graph_to_file_bidirectional(graph_data):
+def write_graph_to_file_bidirectional(graph_data, output_path):
     # Kumpulkan semua vertex unik
     vertex_set = set(graph_data.keys())
     for neighbors in graph_data.values():
@@ -227,8 +227,6 @@ def write_graph_to_file_bidirectional(graph_data):
             edges.append((idx1, idx2))
             edges.append((idx2, idx1))  # dua arah
 
-    # Simpan ke file teks
-    output_path = 'graph_output_bidirectional.txt'
     with open(output_path, 'w') as f:
         for v in vertices:
             f.write(f"{v[0]} {v[1]}\n")
@@ -236,8 +234,6 @@ def write_graph_to_file_bidirectional(graph_data):
         f.write("\n")
         for e in edges:
             f.write(f"{e[0]} {e[1]}\n")
-
-    print(f"Graph saved as plain text to {output_path}")
 
 def parse_graph(file_path):
      # Open the file
@@ -302,50 +298,6 @@ def visualize_graph(file_path):
     plt.figure(figsize=(10, 10))
     nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=8)
     plt.show()
-    
-def clean_graph_from_file(input_path="graph_data.txt", output_path="cleaned_graph.txt"):
-    # Membaca isi file dan memisahkan vertex dan edge
-    with open(input_path, 'r') as f:
-        content = f.read()
-
-    vertex_section, edge_section = content.strip().split('\n\n', 1)
-    vertex_lines = vertex_section.strip().split('\n')
-    edge_lines = edge_section.strip().split('\n')
-
-    # Parsing vertices
-    original_vertices = [tuple(map(int, v.split())) for v in vertex_lines]
-    vertex_map = {}  # map from old index to new index
-    unique_vertices = []
-    coord_to_index = {}
-
-    for i, v in enumerate(original_vertices):
-        if v not in coord_to_index:
-            new_index = len(unique_vertices)
-            coord_to_index[v] = new_index
-            unique_vertices.append(v)
-        vertex_map[i] = coord_to_index[v]
-
-    # Parsing and cleaning edges
-    original_edges = [tuple(map(int, e.split())) for e in edge_lines]
-    cleaned_edges_set = set()
-
-    for v1, v2 in original_edges:
-        new_v1 = vertex_map[v1]
-        new_v2 = vertex_map[v2]
-        if new_v1 != new_v2:
-            cleaned_edges_set.add(tuple(sorted((new_v1, new_v2))))
-
-    cleaned_edges = sorted(cleaned_edges_set)
-
-    # Menuliskan hasil ke file
-    with open(output_path, 'w') as f:
-        for v in unique_vertices:
-            f.write(f"{v[0]} {v[1]}\n")
-        f.write("\n")  # pisahkan section
-        for v1, v2 in cleaned_edges:
-            f.write(f"{v1} {v2}\n")
-
-    print(f"Cleaned graph written to: {output_path}")
 
 def save(g, fname):
     coord_to_new_id = {}
@@ -374,31 +326,18 @@ def save(g, fname):
         for src, dst in sorted(cleaned_edges):
             f.write(f"{src} {dst}\n")
 
-import pickle
-
 def restruct_graph(input_txt_path, output_pickle_path):
     """
     Mengubah file teks berisi vertex dan edge (dipisahkan oleh baris kosong)
     menjadi graph adjacency list berbasis tuple koordinat, dan simpan sebagai file .p
     """
     with open(input_txt_path, 'r') as f:
-        lines = [line.strip() for line in f if line.strip() != '']
+        raw_lines = f.readlines()
 
-    # Temukan index pertama edge berdasarkan asumsi: edge hanya mengandung indeks (bukan koordinat)
-    vertex_lines = []
-    edge_lines = []
-
-    for line in lines:
-        parts = line.split()
-        if len(parts) != 2:
-            continue  # skip invalid lines
-        if all(part.isdigit() for part in parts):
-            # Heuristic: angka besar mungkin koordinat (vertex), kecil mungkin index (edge)
-            a, b = map(int, parts)
-            if a > 100 or b > 100:  # simple heuristic based on your sample
-                vertex_lines.append(line)
-            else:
-                edge_lines.append(line)
+    # Pisahkan antara vertex dan edge berdasarkan baris kosong
+    split_index = raw_lines.index('\n') if '\n' in raw_lines else len(raw_lines)
+    vertex_lines = [line.strip() for line in raw_lines[:split_index] if line.strip()]
+    edge_lines = [line.strip() for line in raw_lines[split_index + 1:] if line.strip()]
 
     # Parsing vertex
     vertices = [tuple(map(int, line.split())) for line in vertex_lines]
@@ -421,25 +360,34 @@ def restruct_graph(input_txt_path, output_pickle_path):
 
 ######################################
 
-# outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_3_Paris_37_road.png").astype('float32') / 255.0
-# outim = outim.swapaxes(0, 1)
+# Main
+outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
+outim = outim.swapaxes(0, 1)
 
-# with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_3_Paris_37.p', 'rb') as file:
-#     graph_data = pickle.load(file)
-
-# with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\save.p', 'rb') as file:
-#     graph_data = pickle.load(file)
-
-# restruct_graph('save.txt', 'save.p')
+with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
+    graph_data = pickle.load(file)
 
 # write_graph_to_file_original(graph_data)
-# write_graph_to_file_bidirectional(graph_data)
+write_graph_to_file_bidirectional(graph_data, 'save.txt')
+g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\save.txt")
+connections = get_connections(g, outim)
+g = insert_connections(g, connections)
+save(g, 'save.txt')
 
-# g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\graph_output_bidirectional.txt")
+restruct_graph('save.txt', 'save.p')
 
-# connections = get_connections(g, outim)
+# # Jika Ingin Visualisasi save.txt
+visualize_graph('save.txt')
 
-# g = insert_connections(g, connections)
-# save(g, 'save.txt')
+# # Jika Ingin Visualisasi save.p
+with open('save.p', 'rb') as file:
+    graph_data = pickle.load(file)
+G = nx.Graph()
 
-# visualize_graph('save.txt')
+for node, neighbors in graph_data.items():
+    for neighbor in neighbors:
+        G.add_edge(node, neighbor)
+
+plt.figure(figsize=(10, 10))
+nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=10)
+plt.show()
