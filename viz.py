@@ -348,31 +348,31 @@ def clean_graph_from_file(input_path="graph_data.txt", output_path="cleaned_grap
     print(f"Cleaned graph written to: {output_path}")
 
 def save(g, fname):
-		coord_to_new_id = {}
-		unique_vertices = []
-		old_id_to_new_id = {}
+    coord_to_new_id = {}
+    unique_vertices = []
+    old_id_to_new_id = {}
 
-		for vertex in g.vertices:
-			coord = (vertex.point.x, vertex.point.y)
-			if coord not in coord_to_new_id:
-				new_id = len(unique_vertices)
-				coord_to_new_id[coord] = new_id
-				unique_vertices.append(coord)
-			old_id_to_new_id[vertex.id] = coord_to_new_id[coord]
+    for vertex in g.vertices:
+        coord = (vertex.point.x, vertex.point.y)
+        if coord not in coord_to_new_id:
+            new_id = len(unique_vertices)
+            coord_to_new_id[coord] = new_id
+            unique_vertices.append(coord)
+        old_id_to_new_id[vertex.id] = coord_to_new_id[coord]
 
-		cleaned_edges = set()
-		for edge in g.edges:
-			new_src = old_id_to_new_id[edge.src.id]
-			new_dst = old_id_to_new_id[edge.dst.id]
-			if new_src != new_dst:
-				cleaned_edges.add(tuple(sorted((new_src, new_dst))))
+    cleaned_edges = set()
+    for edge in g.edges:
+        new_src = old_id_to_new_id[edge.src.id]
+        new_dst = old_id_to_new_id[edge.dst.id]
+        if new_src != new_dst:
+            cleaned_edges.add(tuple(sorted((new_src, new_dst))))
 
-		with open(fname, 'w') as f:
-			for x, y in unique_vertices:
-				f.write(f"{x} {y}\n")
-			f.write("\n")
-			for src, dst in sorted(cleaned_edges):
-				f.write(f"{src} {dst}\n")
+    with open(fname, 'w') as f:
+        for x, y in unique_vertices:
+            f.write(f"{x} {y}\n")
+        f.write("\n")
+        for src, dst in sorted(cleaned_edges):
+            f.write(f"{src} {dst}\n")
 
 ######################################
 
