@@ -361,33 +361,35 @@ def restruct_graph(input_txt_path, output_pickle_path):
 ######################################
 
 # Main
-outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
-outim = outim.swapaxes(0, 1)
+if __name__ == "__main__":
+    outim = imageio.imread(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\mask\AOI_2_Vegas_1173_road.png").astype('float32') / 255.0
+    outim = outim.swapaxes(0, 1)
 
-with open('D:\Kuliah\\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
-    graph_data = pickle.load(file)
+    with open(r'D:\Kuliah\bismillah-yudis-1\Tools\graph\inferencer_spacenet\graph\AOI_2_Vegas_1173.p', 'rb') as file:
+        graph_data = pickle.load(file)
 
-# write_graph_to_file_original(graph_data)
-write_graph_to_file_bidirectional(graph_data, 'save.txt')
-g = graph.read_graph("D:\Kuliah\\bismillah-yudis-1\Tools\graph\save.txt")
-connections = get_connections(g, outim)
-g = insert_connections(g, connections)
-save(g, 'save.txt')
+    # write_graph_to_file_original(graph_data)
+    write_graph_to_file_bidirectional(graph_data, 'save.txt')
+    
+    g = graph.read_graph(r"D:\Kuliah\bismillah-yudis-1\Tools\graph\save.txt")
+    connections = get_connections(g, outim)
+    g = insert_connections(g, connections)
+    save(g, 'save.txt')
 
-restruct_graph('save.txt', 'save.p')
+    restruct_graph('save.txt', 'save.p')
 
-# # Jika Ingin Visualisasi save.txt
-visualize_graph('save.txt')
+    # Jika ingin visualisasi save.txt
+    visualize_graph('save.txt')
 
-# # Jika Ingin Visualisasi save.p
-with open('save.p', 'rb') as file:
-    graph_data = pickle.load(file)
-G = nx.Graph()
+    # Jika ingin visualisasi save.p
+    with open('save.p', 'rb') as file:
+        graph_data = pickle.load(file)
+    
+    G = nx.Graph()
+    for node, neighbors in graph_data.items():
+        for neighbor in neighbors:
+            G.add_edge(node, neighbor)
 
-for node, neighbors in graph_data.items():
-    for neighbor in neighbors:
-        G.add_edge(node, neighbor)
-
-plt.figure(figsize=(10, 10))
-nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=10)
-plt.show()
+    plt.figure(figsize=(10, 10))
+    nx.draw(G, pos={node: node for node in G.nodes()}, with_labels=True, node_size=100, font_size=10)
+    plt.show()
