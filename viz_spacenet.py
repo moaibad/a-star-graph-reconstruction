@@ -8,7 +8,7 @@ from viz import write_graph_to_file_bidirectional
 from viz import save
 from viz import restruct_graph
 
-base_folder = 'inferencer_spacenet'
+base_folder = 'test'
 graph_path = f'{base_folder}/graph'
 mask_path = f'{base_folder}/mask'
 processed_path = f'{base_folder}/processed'
