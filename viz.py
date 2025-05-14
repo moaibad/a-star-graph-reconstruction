@@ -10,17 +10,13 @@ import numpy
 import random
 from io import StringIO
 
-
-MIN_GRAPH_DISTANCE = 100
-MAX_STRAIGHT_DISTANCE = 50
-
 # MIN_GRAPH_DISTANCE = 16.6
 # MAX_STRAIGHT_DISTANCE = 8.3
 # MIN_GRAPH_DISTANCE = 166
 # MAX_STRAIGHT_DISTANCE = 83
 RDP_EPSILON = 2
 
-def get_connections(g, im, limit=None):
+def get_connections(g, im, min_graph_distance, max_straight_distance, limit=None):
     edge_im = -numpy.ones(im.shape, dtype='int32')
     for edge in g.edges:
         for p in geom.draw_line(edge.src.point, edge.dst.point, geom.Point(edge_im.shape[0], edge_im.shape[1])):
@@ -34,12 +30,11 @@ def get_connections(g, im, limit=None):
     for rs in road_segments:
         for vertex, opp in [(rs.src(), rs.point_at_factor(10)), (rs.dst(), rs.point_at_factor(rs.length() - 10))]:
             if len(vertex.out_edges) >= 2 or vertex in seen_vertices:
-            # if len(vertex.in_edges) + len(vertex.out_edges) >= 2 or vertex in seen_vertices:
                 continue
             seen_vertices.add(vertex)
 
-            vertex_distances = get_vertex_distances(vertex, MIN_GRAPH_DISTANCE)
-            edge, path = get_shortest_path(im, vertex.point, opp, edge_im, g, vertex_distances)
+            vertex_distances = get_vertex_distances(vertex, min_graph_distance)
+            edge, path = get_shortest_path(im, vertex.point, opp, edge_im, g, vertex_distances, min_graph_distance, max_straight_distance)
             if edge is not None:
                 proposed_connections.append({
                     'src': vertex.id,
@@ -55,7 +50,6 @@ def get_connections(g, im, limit=None):
 def insert_connections(g, connections):
     split_edges = {}  # map from edge to (split pos, new edge before pos, new edge after pos)
     
-
     for idx, connection in enumerate(connections):
         # figure out which current edge the connection intersects
         edge = g.edges[connection['edge']]
@@ -131,8 +125,8 @@ def get_vertex_distances(src, max_distance):
 
 	return vertex_distances
 
-def get_shortest_path(im, src, opp, edge_im, g, vertex_distances):
-	r = src.bounds().add_tol(MAX_STRAIGHT_DISTANCE)
+def get_shortest_path(im, src, opp, edge_im, g, vertex_distances, min_graph_distance, max_straight_distance):
+	r = src.bounds().add_tol(max_straight_distance)
 	r = geom.Rectangle(geom.Point(0, 0), geom.Point(im.shape[0], im.shape[1])).clip_rect(r)
 	seen_points = set()
 	distances = {}
@@ -153,9 +147,9 @@ def get_shortest_path(im, src, opp, edge_im, g, vertex_distances):
 		seen_points.add(closest_point)
 		if edge_im[closest_point.x-1, closest_point.y-1] >= 0:
 			edge = g.edges[edge_im[closest_point.x-1, closest_point.y-1]]
-			src_distance = vertex_distances.get(edge.src, MIN_GRAPH_DISTANCE)
-			dst_distance = vertex_distances.get(edge.dst, MIN_GRAPH_DISTANCE)
-			if src_distance + closest_point.distance(edge.src.point) >= MIN_GRAPH_DISTANCE and dst_distance + closest_point.distance(edge.dst.point) >= MIN_GRAPH_DISTANCE:
+			src_distance = vertex_distances.get(edge.src, min_graph_distance)
+			dst_distance = vertex_distances.get(edge.dst, min_graph_distance)
+			if src_distance + closest_point.distance(edge.src.point) >= min_graph_distance and dst_distance + closest_point.distance(edge.dst.point) >= min_graph_distance:
 				dst_edge = edge
 				dst_point = closest_point
 				break
