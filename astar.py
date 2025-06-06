@@ -82,7 +82,12 @@ def main(base_folder, dataset, min_graph_distance, max_straight_distance):
 
             if not os.path.exists(viz_path):
                 os.makedirs(viz_path)
-            viz_img = triage.visualize_image_and_graph(viz_img, nodes / img_size, edges, viz_img.shape[0])
+                
+            if nodes is not None and len(nodes) > 0:
+                if dataset == 'spacenet':
+                    nodes = np.stack([400 - nodes[:, 0], nodes[:, 1]], axis=1)
+                viz_img = triage.visualize_image_and_graph(viz_img, nodes / img_size, edges, viz_img.shape[0])
+                
             cv2.imwrite(os.path.join(viz_path, f'{filename}.png'), viz_img)
             
     for file in os.listdir(processed_path):
