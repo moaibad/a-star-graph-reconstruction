@@ -4,6 +4,7 @@ import imageio.v2 as imageio
 import pickle
 import numpy as np
 import cv2
+import time
 from roadtracer.lib.discoverlib import graph
 from viz import get_connections
 from viz import insert_connections
@@ -102,4 +103,10 @@ if __name__ == "__main__":
     parser.add_argument('--max_straight_distance', type=int, default=32, help='Maximum straight-line distance (default: 32)')
     args = parser.parse_args()
 
+    start_time = time.time()
+    
     main(args.base_folder, args.dataset, args.min_graph_distance, args.max_straight_distance)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time:.2f} seconds")
